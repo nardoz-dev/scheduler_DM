@@ -1,6 +1,6 @@
 # scheduler_DM
 
-- University Project for DataManagement 2023 Course @ Sapienza University of Rome - 
+- University Project for DataManagement 2023 Course @ Sapienza University of Rome.
 
 ## Member
 
