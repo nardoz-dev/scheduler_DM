@@ -39,6 +39,7 @@ def main():
     scheduler_str = scheduler_str.rstrip(',')  # Remove the trailing comma
     scheduler_str += " }"
     print(f"Scheduler Obtained : {scheduler_str}")
+    print(scheduler)
 
     #Check serializability
     is_conflict_serializable = check_serializability(scheduler)
@@ -105,7 +106,7 @@ def has_cycle(graph):
     for node in graph:
         if node not in visited and dfs(node):
             return True
-            
+
     return False
 
 if __name__ == "__main__":
