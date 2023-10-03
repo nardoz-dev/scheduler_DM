@@ -152,7 +152,8 @@ def apply_timestamp():
 # We assume that the physical time is always correct and in order
 # We assume that the timestamp of each transaction Ti coincide with the subscript i, i.e. w2(x) -> ts = 2
 
-#Sample schedule # 1 : OK 
+
+# 1 SCHEDULE : OK 
 """schedule = [
     ("T1","write","u"),
     ("T1","read","x"),
@@ -170,8 +171,7 @@ def apply_timestamp():
     ("T2","commit",None)
     ]
 """
-# 2 SCHEDULE
-#r1(z) r1(y) w3(y) r1(x) r2(x) c1 w4(z)w2(x)w3(x) c3 r4(u) c4 w2(u) c2.
+# 2 SCHEDULE = OK 
 schedule = [
     ("T1","read","z"),
     ("T1","read","y"),
@@ -188,22 +188,6 @@ schedule = [
     ("T2","write","u"),
     ("T2","commit",None)
     ]
-"""
-    
-   
-    
-
-   
-
-    
-    
-
-   
-    
-    
-    
-    ]
-"""
 
 ignored_actions = []
 rollback_transaction = []

@@ -92,8 +92,6 @@ def check_2pl(schedule,locks):
                 locks.append((transaction,resource,"XL"))
                 print(locks)
                             
-
-
 # Test
 # r1x. r2x. w1x. r2z.
 # sl1x. r1x. sl2x. r2x. sl2z. ul2x. xl1x. w1x. ul1x. r2z. ul2z.

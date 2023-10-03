@@ -1,4 +1,3 @@
-import networkx as nx
 
 def main():
     # Init process
@@ -47,15 +46,6 @@ def main():
         print("Conflict Serializable: Yes")
     else:
         print("Conflict Serializable: No")
-
-    #Check if is 2PL 
-    is_2pl = can_apply_2pl_with_anticipation(scheduler)
-    if is_2pl: 
-        print("2PL can be applied")
-    else:
-        print("2PL cannot be applied due to a conflict.")
-
-
 
 def check_serializability(scheduler):
     # Init precedent graph
