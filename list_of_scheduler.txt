@@ -1,0 +1,12 @@
+scheduler da provare : 
+w1(x)r2(x)w2(y)r1(y)        not csr 
+w1(x)r2(x)w3(y)w1(y) 		csr
+w1(y)r2(y)r3(x)w1(x)  		csr but not 2PL 
+
+
+
+pip3 install PyQt
+
+pip3 install networkx matplotlib
+pip3 install tk 
+pip3 install matplotlib[qt5]
