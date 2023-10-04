@@ -130,7 +130,6 @@ class SchedulerWindow(QMainWindow):
         # Clear variables
         init_variable()
     
-
     #--------------------------------------------- INPUT HANDLER
     def add_action(self):
         user_input = self.input_scheduler.text()
@@ -205,7 +204,6 @@ class SchedulerWindow(QMainWindow):
             text_to_add = vars(elem)
             self.resources_status_text.append(str(text_to_add))
 
-
     # Let's see the application of concurrency through ts.
     def apply_rules(self, elem):  
         global ignored_actions
@@ -265,7 +263,7 @@ class SchedulerWindow(QMainWindow):
                     #add the transaction that need to be rollbacked
                     rollback_transaction.append(transaction)
                     transaction_info[transaction_index].rollback = True 
-                    rollback(transaction_ts)
+                    self.rollback(transaction_ts)
 
             elif action_type == "read":
                 if (transaction_ts >= resource_info[resource_index].wts):
@@ -286,7 +284,7 @@ class SchedulerWindow(QMainWindow):
                     #add the transaction that need to be rollbacked
                     rollback_transaction.append(transaction)
                     transaction_info[transaction_index].rollback = True 
-                    rollback(transaction_ts)
+                    self.rollback(transaction_ts)
 
             elif action_type == "commit":
                 text = "Action :"+action_type+" Transaction :"+transaction+" STATUS = ROLLBACK "
@@ -300,7 +298,7 @@ class SchedulerWindow(QMainWindow):
                         elem.wts_c = transaction_ts
                         resource_to_check = elem.name
                 # Now we need to check if some other actions are in waiting for this commit.
-                check_waiting(resource_to_check)
+                self.check_waiting(resource_to_check)
 
     # function used for the transaction that are in waiting for cb("Any resource") = True
     def check_waiting(self,resource_to_check):
@@ -331,7 +329,7 @@ class SchedulerWindow(QMainWindow):
             # Process the related action 
             for elem in new_schedule:
                 #print(elem)
-                apply_rules(elem)
+                self.apply_rules(elem)
                 ignored_actions.remove(elem)
 
     #Function for rollback, we need to know the ts of the transaction that generate rollback
@@ -345,7 +343,7 @@ class SchedulerWindow(QMainWindow):
                 elem.cb = True
                 resource_to_check = elem.name
                 # Now we need to check if some other transaction is in waiting , each time we put to True a new variable
-                check_waiting(resource_to_check)
+                self.check_waiting(resource_to_check)
 
 
     #---------------------------------------- SERIALIZABILITY
@@ -356,26 +354,27 @@ class SchedulerWindow(QMainWindow):
         precedence_graph = {}
         # Scan the scheduler in order to find the conflict pair for adding edges
         for i in range(len(scheduler_for_conflict)):
-            action_i, transaction_i, element_i = scheduler_for_conflict[i]
+            transaction_i, action_i, element_i = scheduler_for_conflict[i]
             if transaction_i not in precedence_graph:
                 precedence_graph[transaction_i] = []
-            
+
             for j in range(i + 1, len(scheduler_for_conflict)):
-                action_j, transaction_j, element_j = scheduler_for_conflict[j]
-                if (
-                    transaction_i != transaction_j
-                    and element_i == element_j
-                    and (action_i == 'write' or action_j == 'write')
-                ):
+                transaction_j, action_j, element_j = scheduler_for_conflict[j]
+                # check conflict pair in order to add edges
+                if ( transaction_i != transaction_j and element_i == element_j and (action_i == 'write' or action_j == 'write') ):
                     if transaction_j not in precedence_graph:
                         precedence_graph[transaction_j] = []
                     precedence_graph[transaction_i].append(transaction_j)
+       
+        #for transaction, adjacents in precedence_graph.items():
+        #    print(f"{transaction}: {adjacents}")
 
         # Check if the graph is acyclic.
         if self.has_cycle(precedence_graph):
             self.check_serializability_button.setStyleSheet("background-color: red")
         else:
             self.check_serializability_button.setStyleSheet("background-color: green")
+
     # Function for checking if there'are cycle (use DFS search)
     def has_cycle(self,graph):
         visited = set()
@@ -391,12 +390,11 @@ class SchedulerWindow(QMainWindow):
                         return True
                 rec_stack.remove(node)
             return False
-
         for node in graph:
             if node not in visited and dfs(node):
                 return True
-
         return False
+
 
 
 def init_variable():

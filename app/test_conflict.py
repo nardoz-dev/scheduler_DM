@@ -1,3 +1,5 @@
+#FIRST FILE REFERENCES OF CONFLICT SERIALIZABILITY
+
 # Esempio di sequenza di azioni (ciascuna azione è una tupla: (transazione, elemento, tipo))
 sequence = [
     ('T1', 'a', 'read'),

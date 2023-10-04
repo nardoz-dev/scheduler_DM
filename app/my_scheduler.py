@@ -216,15 +216,12 @@ def check_serializability(scheduler):
                     precedence_graph[transaction_j] = []
                 precedence_graph[transaction_i].append(transaction_j)
 
-    # Print precedent graph
-    #for transaction, adjacents in precedence_graph.items():
-    #    print(f"{transaction}: {adjacents}")
-
     # Check if the graph is acyclic.
     if has_cycle(precedence_graph):
         return False
     else:
         return True
+
 # Function for checking if there'are cycle (use DFS search)
 def has_cycle(graph):
     visited = set()
