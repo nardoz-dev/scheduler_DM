@@ -157,6 +157,7 @@ class SchedulerWindow(QMainWindow):
                 resource = None
                 transaction_id = "T"+str(transaction_id)
                 scheduler.append((transaction_id, action_type, resource))
+                self.display_scheduler()
             else: 
                 self.show_error_popup("Invalid input format. Please enter 'commit' followed by transaction ID or 'read' or 'write' followed by transaction ID and resource.")
         elif len(parts) == 3 :

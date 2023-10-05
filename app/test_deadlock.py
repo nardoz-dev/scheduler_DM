@@ -28,19 +28,15 @@ def check_deadlock(elem):
             transactionID_in_conflit = elem.wts
             resource_index = index
             break
-
-    if transactionID_in_conflit == None : 
-        print("No possible deadlock")
-    else :
+    if transactionID_in_conflit != None : 
         print("Possible deadlock")
         transactionID_in_conflit = "T"+str(transactionID_in_conflit)
         #print(transactionID_in_conflit)
-        if(any(transactionID_in_conflit for tupla in deadlock_detector)):
+        if(any(transactionID_in_conflit in tupla for tupla in deadlock_detector)):
             print("Action that has generated waiting :",transaction_w,"is waiting for :",transactionID_in_conflit)
             print("It's a match, see if also :",transactionID_in_conflit,"is waiting for :",transaction_w)
-            transactionInDeadLockList_ID = resource_info[index].wts
-            transactionInDeadLockList_ID = "T"+str(transactionInDeadLockList_ID)
-            if(any(transactionInDeadLockList_ID for tupla in deadlock_detector)):
+            transactionInDeadLockList_ID = transactionID_in_conflit
+            if(any(transactionInDeadLockList_ID in elem for elem in deadlock_detector)):
                 print("DEADLOCK")
                 setDeadLock()
             else:
@@ -231,7 +227,7 @@ schedule = [
 # 3 SCHEDULE - DEADLOCK
 #r1(B) w1(A) w2(B) w1(B) r2(A)
 schedule = [
-    ("T1","read","b"),
+    ("T1","read","a"),
     ("T1","write","a"),
     ("T2","write","b"),
     ("T1","write","b"),
@@ -246,8 +242,8 @@ deadlockFlag = False
 # Generate a list without duplicates of the needed element
 list_resource = set([tupla[2] for tupla in schedule if tupla[2] is not None])
 list_transaction = set([tupla[0] for tupla in schedule])
-print(list_resource)
-print(list_transaction)
+#print(list_resource)
+#print(list_transaction)
 
 # Generate array of object's class in order to keep a better track of the element
 resource_info = []
@@ -266,6 +262,7 @@ for elem in resource_info:
     print(vars(elem))
 for elem in transaction_info:
     print(vars(elem))
+
 print("Action that generate waiting and are in deadlock_list :" ,deadlock_detector)
 print("Action that are ignored because transactions in waiting :" ,ignored_actions)
 print("Transazione dal quale bisogna ignorare le azioni perchè in rollback : ", rollback_transaction)
