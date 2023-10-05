@@ -9,8 +9,8 @@
 | `Andrea Nardocci ` | [![name](https://github.com/nardoz-dev/projectName/blob/main/docs/sharedpictures/LogoIn.png)](https://www.linkedin.com/in/andrea-nardocci) | [![name](https://github.com/nardoz-dev/projectName/blob/main/docs/sharedpictures/GitHubLogo.png)](https://github.com/nardoz-dev) |
 
 
-## Usage & Test
-'''
+## Usage 
+```
   $ pip3 install -r requirements.txt
   $ python3 my_scheduler_gui.py
-'''
+```
