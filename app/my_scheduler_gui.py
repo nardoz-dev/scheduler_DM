@@ -155,6 +155,8 @@ class SchedulerWindow(QMainWindow):
             action_type, transaction_id = parts
             if action_type == "commit":
                 resource = None
+                transaction_id = "T"+str(transaction_id)
+                scheduler.append((transaction_id, action_type, resource))
             else: 
                 self.show_error_popup("Invalid input format. Please enter 'commit' followed by transaction ID or 'read' or 'write' followed by transaction ID and resource.")
         elif len(parts) == 3 :
@@ -248,10 +250,10 @@ class SchedulerWindow(QMainWindow):
 
                 elif (transaction_ts >= resource_info[resource_index].rts) and (transaction_ts < resource_info[resource_index].wts):
                     if resource_info[resource_index].cb == True:
-                        text = "Action :"+action_type+" Transaction :"+transaction+" over element :"+resource+" STATUS = IGNORE "
+                        text = "Action :"+action_type+" Transaction :"+transaction+" over element :"+resource+" STATUS = IGNORE - THOMAS RULE "
                         self.actions_text.append(text)
                     else:
-                        text = "Action :"+action_type+" Transaction :"+transaction+" over element :"+resource+" STATUS = WAITING "
+                        text = "Action :"+action_type+" Transaction :"+transaction+" over element :"+resource+" STATUS = WAITING - THOMAS RULE "
                         self.actions_text.append(text)
                         #add the action that generate waiting into deadlock_list_detector
                         deadlock_detector.append(( transaction , action_type, resource ))
