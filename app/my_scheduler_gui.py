@@ -248,10 +248,12 @@ class SchedulerWindow(QMainWindow):
                         deadlock_detector.append(( transaction , action_type, resource ))
                         transaction_info[transaction_index].waiting = True   
                         ignored_actions.append(( transaction , action_type, resource ))
+                        check_deadlock(( transaction , action_type, resource ))
 
                 elif (transaction_ts >= resource_info[resource_index].rts) and (transaction_ts < resource_info[resource_index].wts):
                     if resource_info[resource_index].cb == True:
                         text = "Action :"+action_type+" Transaction :"+transaction+" over element :"+resource+" STATUS = IGNORE - THOMAS RULE "
+                        ignored_actions.append(( transaction , action_type, resource ))   
                         self.actions_text.append(text)
                     else:
                         text = "Action :"+action_type+" Transaction :"+transaction+" over element :"+resource+" STATUS = WAITING - THOMAS RULE "
@@ -260,6 +262,8 @@ class SchedulerWindow(QMainWindow):
                         deadlock_detector.append(( transaction , action_type, resource ))
                         transaction_info[transaction_index].waiting = True
                         ignored_actions.append(( transaction , action_type, resource ))   
+                        check_deadlock(( transaction , action_type, resource ))
+
                 else:
                     text = "Action :"+action_type+" Transaction :"+transaction+" over element :"+resource+" STATUS = ROLLBACK "
                     self.actions_text.append(text)
@@ -281,6 +285,8 @@ class SchedulerWindow(QMainWindow):
                         deadlock_detector.append(( transaction , action_type, resource ))
                         transaction_info[transaction_index].waiting = True
                         ignored_actions.append(elem)   
+                        check_deadlock(( transaction , action_type, resource ))
+
                 else:
                     text = "Action :"+action_type+" Transaction :"+transaction+" over element :"+resource+" STATUS = ROLLBACK "
                     self.actions_text.append(text)
@@ -302,6 +308,34 @@ class SchedulerWindow(QMainWindow):
                         resource_to_check = elem.name
                 # Now we need to check if some other actions are in waiting for this commit.
                 self.check_waiting(resource_to_check)
+
+    def check_deadlock(self,elem):
+        #Invoked whenever an action is added to the deadlock_list transactions in waiting.
+        transaction_w, action_w, resource_w = elem[0],elem[1],elem[2]
+        # Get the transaction ID in which the current action is waiting for
+        transactionID_in_conflit = None
+        for index, elem in enumerate(resource_info):
+            if elem.name == resource_w:
+                transactionID_in_conflit = elem.wts
+                resource_index = index
+                break
+        if transactionID_in_conflit != None : 
+            transactionID_in_conflit = "T"+str(transactionID_in_conflit)
+            if(any(transactionID_in_conflit in tupla for tupla in deadlock_detector)):
+                #print("Action that has generated waiting :",transaction_w,"is waiting for :",transactionID_in_conflit)
+                #print("It's a match, see if also :",transactionID_in_conflit,"is waiting for :",transaction_w)
+                transactionInDeadLockList_ID = transactionID_in_conflit
+                if(any(transactionInDeadLockList_ID in elem for elem in deadlock_detector)):
+                    #print("DEADLOCK")
+                    setDeadLock()
+                    message_error += f"DeadLock Detected over the transaction {transactionID_in_conflit} and {transaction_w} "
+                    self.show_error_popup("Message Error")
+                else:
+                    print("No, the other transaction is waiting for the commit fo the transaction : ",transactionInDeadLockList_ID)
+
+    def setDeadLock(self):
+        global deadlock_f
+        deadlock_f = True
 
     # function used for the transaction that are in waiting for cb("Any resource") = True
     def check_waiting(self,resource_to_check):
@@ -407,12 +441,14 @@ def init_variable():
     global deadlock_detector
     global resource_info 
     global transaction_info
+    global
     scheduler = []
     ignored_actions = []
     rollback_transaction = []
     deadlock_detector = []
     resource_info = []
     transaction_info = []
+    deadlock_f = False
 
 if __name__ == '__main__':
     # Init GUI
