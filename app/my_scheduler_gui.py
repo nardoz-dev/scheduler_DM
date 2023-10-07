@@ -600,7 +600,6 @@ class SchedulerWindow(QMainWindow):
         list_transaction = set([tupla[0] for tupla in scheduler_for_conflict])
         # Generate all permutation possible with the different transaction_id present in the schedule
         all_permutations = itertools.permutations(list_transaction)
-
         # iterate over all the permutation, we will stop at the first occurency
         for permuted_transactions in all_permutations:
             permuted_schedule = []
@@ -615,9 +614,9 @@ class SchedulerWindow(QMainWindow):
             read_from_to_check = set(read_from)
             final_write_to_check = set(final_write)
             read_from_permuted = set(permuted_read_from)
-            final_Write_permuted = set(final_write)
-            
-            if read_from_to_check == read_from_permuted and final_write_to_check == final_Write_permuted:
+            final_write_permuted = set(permuted_final_write)
+
+            if read_from_to_check == read_from_permuted and final_write_to_check == final_write_permuted:
                 self.check_view_s_button.setStyleSheet("background-color: green")
                 serial_scheduler = ""
                 serial_scheduler += f"{permuted_transactions}"
@@ -628,7 +627,6 @@ class SchedulerWindow(QMainWindow):
                 self.check_view_s_button.setStyleSheet("background-color: red")
                 self.view_text.setText("No view-serializable")
                 self.check_view_s_button.setEnabled(False)
-                break
 
     def extract_read_from_final_write(self,schedule):
         read_from = []
@@ -638,20 +636,27 @@ class SchedulerWindow(QMainWindow):
             if action_name == "read":
                 j = i - 1
                 for j in range(i - 1, -1, -1):
-                    #print("Nostra azione : ",(transaction_id, action_name, resource))
-                    #print("Azione dello scheduler :",(schedule[j][0],schedule[j][1],schedule[j][2]))
                     if (schedule[j][2] == resource and schedule[j][1] == "write" and schedule[j][0] != transaction_id ):
                         read_from.append((transaction_id,action_name,resource,schedule[j][0],schedule[j][1],schedule[j][2]))
             if action_name == "write":
                 j = i - 1
-                if(schedule[j][2] == resource):
-                    #create a new list without the tupla with the resource == schedule[j][2]
-                    final_write = [(resource, transaction_id) for resource, _ in final_write if resource != schedule[j][2]]
-                    #add element
-                    final_write.append((resource,schedule[j][0]))
-                else:
+                elem = (resource,transaction_id)
+                found = False
+
+                #print("Final Write prima l'azione", final_write)
+                if len(final_write) == 0:
                     final_write.append((resource,transaction_id))
+                else:
+                    for idx, elem in enumerate(final_write):
+                        res = elem[0]
+                        if res == resource:  # quindi se ho una write e ho lo stesso elemento 
+                            final_write[idx] = (res, transaction_id) #sostituisco la tupla con il tuovo transaction ID.
+                            found = True
+                    if not found:
+                        final_write.append((resource,transaction_id))
+
         return read_from, final_write
+       
 
 
 def init_variable():
