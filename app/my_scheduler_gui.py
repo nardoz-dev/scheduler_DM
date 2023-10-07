@@ -2,6 +2,7 @@ import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QTextEdit, QLabel, QTextBrowser, QLineEdit, QMessageBox
 from PyQt6.QtGui import QColor
 
+
 class Transaction:
     def __init__(self, name):
         self.name = name
@@ -24,9 +25,17 @@ class SchedulerWindow(QMainWindow):
         # Set my Window View
         self.setWindowTitle("myScheduler")
         self.setGeometry(100, 100, 910, 630)
-        # Box for the scheduler
-        self.scheduler_label = QLabel("Scheduler")
-        # self.scheduler_text = QTextEdit()
+        
+        # Box for the scheduler  ------------------------------- GUI INPUT
+        self.scheduler_label = QLabel("Insert actions")
+        # Bottone to delete all
+        self.clear_button = QPushButton("Clear All")
+        self.clear_button.clicked.connect(self.clear_all)
+        header_layout = QHBoxLayout()
+        header_layout.addWidget(self.scheduler_label)
+        header_layout.addStretch(1)
+        header_layout.addWidget(self.clear_button)
+        # Space for input handler
         self.input_scheduler = QLineEdit()
         self.input_scheduler.returnPressed.connect(self.add_action)
         self.input_scheduler.setMaximumHeight(27)
@@ -39,21 +48,27 @@ class SchedulerWindow(QMainWindow):
         button_schedule_layout = QHBoxLayout()
         button_schedule_layout.addWidget(self.add_action_button)
         button_schedule_layout.addWidget(self.generate_scheduler_button)
-        # box for displaying generated scheduler
+        # box for displaying generated scheduler 
         self.scheduler_output_lab = QLabel("Scheduler generated")
         self.scheduler_output = QTextBrowser() 
         self.scheduler_output.setReadOnly(True) 
         self.scheduler_output.setMaximumHeight(100)
-        # Scheduler layout
+        # Layout for the input scheduler
         scheduler_layout = QVBoxLayout()
-        scheduler_layout.addWidget(self.scheduler_label)
+        scheduler_layout.addLayout(header_layout)
         scheduler_layout.addWidget(self.input_scheduler)
         scheduler_layout.addLayout(button_schedule_layout)
         scheduler_layout.addWidget(self.scheduler_output_lab)
         scheduler_layout.addWidget(self.scheduler_output)
-        # Scheduler container
-        scheduler_container = QWidget()
-        scheduler_container.setLayout(scheduler_layout)
+        # Container for the input scheduler
+        input_container = QWidget()
+        input_container.setLayout(scheduler_layout)
+
+        # Botton to start the concurrency throught timestamp ------------------------------- GUI CONCURRENCY CONTROL
+        self.concurrency_ts_button = QPushButton("Apply Concurrency Control Strategy")
+        self.concurrency_ts_button.clicked.connect(self.apply_timestamp)
+        self.concurrency_ts_button.setFixedWidth(250)
+        self.concurrency_ts_button.setEnabled(False)
         # Box for keep track the status of resources
         self.resources_status_label = QLabel("Status Resources/Transaction at the end")
         self.resources_status_text = QTextEdit()
@@ -63,8 +78,8 @@ class SchedulerWindow(QMainWindow):
         resources_status_layout.addWidget(self.resources_status_label)
         resources_status_layout.addWidget(self.resources_status_text)
         # Resource/Transaction container
-        resources_status_container = QWidget()
-        resources_status_container.setLayout(resources_status_layout)
+        # resources_status_container = QWidget()
+        # resources_status_container.setLayout(resources_status_layout)
         # Box for the actions executed
         self.actions_label = QLabel("Workflow concurrency control")
         self.actions_text = QTextEdit()
@@ -73,37 +88,55 @@ class SchedulerWindow(QMainWindow):
         actions_layout = QVBoxLayout()
         actions_layout.addWidget(self.actions_label)
         actions_layout.addWidget(self.actions_text)
-        # Container for the action executed
-        actions_container = QWidget()
-        actions_container.setLayout(actions_layout)
-        # Botton to start the concurrency throught timestamp
-        self.concurrency_ts_button = QPushButton("Apply concurrency Timestamp")
-        self.concurrency_ts_button.clicked.connect(self.apply_timestamp)
-        self.concurrency_ts_button.setEnabled(False)
-        # Bottone for checking serializability
-        self.check_serializability_button = QPushButton("Check Serializability")
-        self.check_serializability_button.clicked.connect(self.check_serializability)
-        self.check_serializability_button.setEnabled(False)
-        # Bottone to delete all
-        self.clear_button = QPushButton("Clear All")
-        self.clear_button.clicked.connect(self.clear_all)
-        # Layout principale
+        # Layout for the output
+        concurrency_output_layout = QHBoxLayout()
+        concurrency_output_layout.addLayout(resources_status_layout)
+        concurrency_output_layout.addLayout(actions_layout)
+        # Layout for the concurrency section
+        concurrency_layout = QVBoxLayout()
+        concurrency_layout.addWidget(self.concurrency_ts_button)
+        concurrency_layout.addLayout(concurrency_output_layout)
+
+        # Container for the action
+        # actions_container = QWidget()
+        # actions_container.setLayout(actions_layout)
+        # Container for the concurrency section
+        concurrency_container = QWidget()
+        concurrency_container.setLayout(concurrency_layout)
+
+        # Bottone for checking conflict serializability ------------------------------- GUI SERIALIZABILITY
+        self.check_conflict_s_button = QPushButton("Check Conflict Serializability")
+        self.check_conflict_s_button.clicked.connect(self.check_serializability)
+        self.check_conflict_s_button.setEnabled(False)
+        # Botton for checking view serializability
+        self.check_view_s_button = QPushButton("Check View Serializability")
+        self.check_view_s_button.clicked.connect(self.check_view_serializability)
+        self.check_view_s_button.setEnabled(False)
+        # Layout for the bottom
+        serializability_b_layout = QHBoxLayout()
+        serializability_b_layout.addWidget(self.check_conflict_s_button)
+        serializability_b_layout.addWidget(self.check_view_s_button)
+        # Display the output of serializability
+        self.serial_schedule_label = QLabel("Serial Schedule equivalent")
+        self.serial_schedule_label = QTextEdit()
+        self.serial_schedule_label.setReadOnly(True)
+        # Layout della serializability section
+        serializability_layout = QVBoxLayout()
+        serializability_layout.addLayout(serializability_b_layout)
+        serializability_layout.addWidget(self.serial_schedule_label)
+        # Container per la serializability sectionß
+        serializability_container = QWidget()
+        serializability_container.setLayout(serializability_layout)
+
+        # Assembly layout principale
         main_layout = QVBoxLayout()
-        main_layout.addWidget(scheduler_container)
-        # Second Layout
-        second_layout = QHBoxLayout()
-        second_layout.addWidget(resources_status_container)
-        second_layout.addWidget(actions_container)
-        # Functionality Layout
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(self.concurrency_ts_button)
-        button_layout.addWidget(self.check_serializability_button)
-        button_layout.addWidget(self.clear_button)
-        # Build my window view
-        main_layout.addLayout(second_layout)
-        main_layout.addLayout(button_layout)
+        main_layout.addWidget(input_container)
+        main_layout.addWidget(concurrency_container)
+        main_layout.addWidget(serializability_container)
+        #Final container
         central_widget = QWidget()
         central_widget.setLayout(main_layout)
+
         self.setCentralWidget(central_widget)
 
     #-------------------------------------------- UI FUNCTIONALITY
@@ -120,19 +153,19 @@ class SchedulerWindow(QMainWindow):
         self.input_scheduler.setEnabled(True)
         self.generate_scheduler_button.setEnabled(True)
         self.concurrency_ts_button.setEnabled(False)
-        self.check_serializability_button.setEnabled(False)
+        self.check_conflict_s_button.setEnabled(False)
         # Clear Window GUI
         self.input_scheduler.clear()
         self.resources_status_text.clear()
         self.actions_text.clear()
         self.scheduler_output.clear()
-        self.check_serializability_button.setStyleSheet("")
+        self.check_conflict_s_button.setStyleSheet("")
         # Clear variables
         init_variable()
 
     def deadlock_event(self):
         self.concurrency_ts_button.setEnabled(False)
-        self.check_serializability_button.setEnabled(False)
+        self.check_conflict_s_button.setEnabled(False)
 
     
     #--------------------------------------------- INPUT HANDLER
@@ -185,7 +218,7 @@ class SchedulerWindow(QMainWindow):
         self.input_scheduler.setEnabled(False)
         self.generate_scheduler_button.setEnabled(False)
         self.concurrency_ts_button.setEnabled(True)
-        self.check_serializability_button.setEnabled(True)
+        self.check_conflict_s_button.setEnabled(True)
         self.display_scheduler()
         #init_variable_for_algorithm()
     
@@ -427,9 +460,9 @@ class SchedulerWindow(QMainWindow):
 
         # Check if the graph is acyclic.
         if self.has_cycle(precedence_graph):
-            self.check_serializability_button.setStyleSheet("background-color: red")
+            self.check_conflict_s_button.setStyleSheet("background-color: red")
         else:
-            self.check_serializability_button.setStyleSheet("background-color: green")
+            self.check_conflict_s_button.setStyleSheet("background-color: green")
 
     # Function for checking if there'are cycle (use DFS search)
     def has_cycle(self,graph):
@@ -451,6 +484,8 @@ class SchedulerWindow(QMainWindow):
                 return True
         return False
 
+    def check_view_serializability(self):
+        pass
 
 
 def init_variable():
