@@ -1,7 +1,7 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QTextEdit, QLabel, QTextBrowser, QLineEdit, QMessageBox, QCheckBox
 from PyQt6.QtGui import QColor
-import itertools
+import itertools,random
 
 
 class Transaction:
@@ -67,11 +67,11 @@ class SchedulerWindow(QMainWindow):
 
         # Botton to start the concurrency throught timestamp ------------------------------- GUI CONCURRENCY CONTROL
         self.concurrency_ts_button = QPushButton("Apply Concurrency Control Strategy")
-        self.concurrency_ts_button.clicked.connect(self.apply_timestamp)
+        self.concurrency_ts_button.clicked.connect(self.apply_timestamp_from_bt)
         self.concurrency_ts_button.setFixedWidth(250)
         self.concurrency_ts_button.setEnabled(False)
         self.deadlock_solution_switch = QCheckBox("Deadlock Solution On/Off")
-        #self.concurrency_switch.toggled.connect(self.toggle_concurrency)  - to activate
+        self.deadlock_solution_switch.toggled.connect(self.toggle_deadlock_solution) 
         self.deadlock_solution_switch.setChecked(False)
         # Layout concurrency button functionality
         concurrency_buttons_layout = QHBoxLayout()
@@ -115,7 +115,7 @@ class SchedulerWindow(QMainWindow):
 
         # Bottone for checking conflict serializability ------------------------------- GUI SERIALIZABILITY
         self.check_conflict_s_button = QPushButton("Check Conflict Serializability")
-        self.check_conflict_s_button.clicked.connect(self.check_serializability)
+        self.check_conflict_s_button.clicked.connect(self.check_serializability_bt)
         self.check_conflict_s_button.setEnabled(False)
         # Botton for checking view serializability
         self.check_view_s_button = QPushButton("Check View Serializability")
@@ -191,18 +191,40 @@ class SchedulerWindow(QMainWindow):
         # Clear variables
         init_variable()
 
-   
-
+    def toggle_deadlock_solution(self):
+        global flag_deadlock_solution
+        flag_deadlock_solution = not flag_deadlock_solution
     
+    def apply_timestamp_from_bt(self):
+        self.concurrency_ts_button.setEnabled(False)
+        self.apply_timestamp(scheduler)
+  
+    def check_serializability_bt(self):
+        is_conflict, serial_schedule = self.check_serializability()
+        print(is_conflict,serial_schedule)
+        # Check if the graph is acyclic.
+        if not is_conflict:
+            self.check_conflict_s_button.setStyleSheet("background-color: red")
+            self.check_conflict_s_button.setEnabled(False)
+            self.conflict_text.setText("No conflict-serializable")
+        else:
+            self.check_conflict_s_button.setStyleSheet("background-color: green")
+            self.check_view_s_button.setStyleSheet("background-color: green")
+            self.check_conflict_s_button.setEnabled(False)
+            self.check_view_s_button.setEnabled(False)
+            inverted_list = serial_schedule[::-1]
+            self.conflict_text.setText(str(inverted_list))
+        
     #--------------------------------------------- INPUT HANDLER
     def add_action(self):
         user_input = self.input_scheduler.text()
         self.process_input(user_input)
         pass
 
-    def display_scheduler(self):
+    def display_scheduler(self,input_scheduler):
+        scheduler_for_output = list(input_scheduler)   
         scheduler_str = "S : {"
-        for action in scheduler:
+        for action in scheduler_for_output:
             transaction_id, action_type, resource = action
             if action_type in ["read","write"]:
                 scheduler_str += f" {action_type}{transaction_id[1]}({resource}),"
@@ -223,7 +245,7 @@ class SchedulerWindow(QMainWindow):
                 resource = None
                 transaction_id = "T"+str(transaction_id)
                 scheduler.append((transaction_id, action_type, resource))
-                self.display_scheduler()
+                self.display_scheduler(scheduler)
             
         elif len(parts) == 3 :
             action_type, transaction_id, resource = parts
@@ -233,7 +255,7 @@ class SchedulerWindow(QMainWindow):
                 transaction_id = "T"+str(transaction_id)
                 scheduler.append((transaction_id, action_type, resource))
                 #self.list_widget.addItem(f"Added: {user_input}")
-                self.display_scheduler()
+                self.display_scheduler(scheduler)
         else:
             self.show_error_popup("Invalid input format. Please enter 'read' or 'write' followed by transaction ID and resource.")
         
@@ -246,21 +268,63 @@ class SchedulerWindow(QMainWindow):
         self.concurrency_ts_button.setEnabled(True)
         self.check_conflict_s_button.setEnabled(True)
         self.check_view_s_button.setEnabled(True)
-        self.display_scheduler()
-        #init_variable_for_algorithm()
+        self.display_scheduler(scheduler)
     
     #---------------------------------------- CONCURRENCY CONTROL
-    
-    def deadlock_event(self):  #FORSE DA ELIMINARE
-        self.concurrency_ts_button.setEnabled(False)
-        
     def setDeadLock(self):
         global deadlock_f
         deadlock_f = True
-        self.deadlock_event()
-
+        
     def deadlock_solution(self,transactionID_1, transactionID_2):
-        pass
+        global deadlock_s_exec
+        global deadlock_solution
+        global ignored_actions
+        global rollback_transaction 
+        global deadlock_detector
+        global resource_info 
+        global transaction_info
+        ignored_actions = []
+        rollback_transaction = []
+        deadlock_detector = []
+        resource_info = []
+        transaction_info = []
+        # For each transaction generate ad assign a priority number.
+        priority_dictionary = {}
+        generated_numbers = set()
+
+        list_transaction = set([tupla[0] for tupla in scheduler])
+        for elem in list_transaction:
+            priority_dictionary[elem] = random.randint(1, 100)
+            while True:
+                random_num = random.randint(1, 100)
+                # we are sure that the generated number is not equal to others
+                if random_num not in generated_numbers:
+                    generated_numbers.add(random_num)
+                    priority_dictionary[elem] = random_num
+                    break  
+
+        # Remove the text from UI
+        self.resources_status_text.clear()
+        self.actions_text.clear()
+        self.scheduler_output.clear()
+        # Restore some other variable to default
+
+        deadlock_solution = [tupla for tupla in scheduler if transactionID_1 not in tupla]
+        deadlock_s_exec = True
+        self.display_scheduler(deadlock_solution)
+        self.apply_timestamp(deadlock_solution)
+        """ if( priority_dictionary[transactionID_1] > priority_dictionary[transactionID_2] ):
+            # print("Kill transaction :",trans1)
+       
+        else:
+            # print("Kill transaction :",transactionID_2)
+            deadlock_solution = [tupla for tupla in scheduler if transactionID_2 not in tupla]
+            # print(deadlock_solution)
+            deadlock_s_exec = True
+            self.display_scheduler()
+            self.apply_timestamp()
+        """
+
     def check_deadlock(self,elem):
         #Invoked whenever an action is added to the deadlock_list transactions in waiting.
         transaction_w, action_w, resource_w = elem[0],elem[1],elem[2]
@@ -281,38 +345,48 @@ class SchedulerWindow(QMainWindow):
                     self.setDeadLock()
                     text = "DEADLOCK"
                     self.actions_text.append(text)
-                    message_error = ""
-                    message_error += f"DeadLock Detected over the transaction {transactionID_in_conflit} and {transaction_w} "
-                    self.show_error_popup(message_error)
+                    if flag_deadlock_solution == True:
+                        self.deadlock_solution(transactionInDeadLockList_ID,transaction_w)
+                    else:
+                        message_error = ""
+                        message_error += f"DeadLock Detected over the transaction {transactionID_in_conflit} and {transaction_w} "
+                        self.show_error_popup(message_error)
                 else:
                     print("No, the other transaction is waiting for the commit fo the transaction : ",transactionInDeadLockList_ID)
 
-    def apply_timestamp(self):
-        global scheduler
-
+    def apply_timestamp(self,input_scheduler):
+        scheduler_to_use = list(input_scheduler)
         # Generate a list without duplicates of the needed element
-        list_resource = set([tupla[2] for tupla in scheduler if tupla[2] is not None])
-        list_transaction = set([tupla[0] for tupla in scheduler])
+        list_resource = set([tupla[2] for tupla in scheduler_to_use if tupla[2] is not None])
+        list_transaction = set([tupla[0] for tupla in scheduler_to_use])
+        # Create list of object class.
         for elem in list_resource:
             resource_info.append(ResourceInfo(elem))
         for elem in list_transaction:
             transaction_info.append(Transaction(elem))
-        
-      
-        # Apply timestamp_rules over schedules
-        for elem in scheduler:
-            # it means we procede only if it remains False.
-            if not deadlock_f:
-                self.apply_rules(elem)
 
-        # Print results
-        for elem in resource_info:
-            text_to_add = vars(elem)
-            self.resources_status_text.append(str(text_to_add))
-        for elem in transaction_info:
-            text_to_add = vars(elem)
-            self.resources_status_text.append(str(text_to_add))
-    
+        if not deadlock_s_exec :
+            # Apply timestamp_rules over the new scheduler
+            for elem in scheduler_to_use:
+                if not deadlock_f:
+                    self.apply_rules(elem)
+                    if deadlock_f == False:
+                        for elem in resource_info:
+                            text_to_add = vars(elem)
+                            self.resources_status_text.append(str(text_to_add))
+                        self.resources_status_text.append("-----------------------------")
+        else:
+            # Apply timestamp_rules over the new scheduler
+            for elem in scheduler_to_use:
+                self.apply_rules(elem)
+                for elem in resource_info:
+                    text_to_add = vars(elem)
+                    self.resources_status_text.append(str(text_to_add))
+                self.resources_status_text.append("-----------------------------")
+            for elem in transaction_info:
+                text_to_add = vars(elem)
+                self.resources_status_text.append(str(text_to_add))
+
     # Let's see the application of concurrency through ts.
     def apply_rules(self, elem):  
         global ignored_actions
@@ -476,45 +550,47 @@ class SchedulerWindow(QMainWindow):
         for i in range(len(scheduler_for_conflict)):
             transaction_i, action_i, element_i = scheduler_for_conflict[i]
             if transaction_i not in precedence_graph:
-                precedence_graph[transaction_i] = []
+                precedence_graph[transaction_i] = set()
 
             for j in range(i + 1, len(scheduler_for_conflict)):
                 transaction_j, action_j, element_j = scheduler_for_conflict[j]
                 # check conflict pair in order to add edges
-                if ( transaction_i != transaction_j and element_i == element_j and (action_i == 'write' or action_j == 'write') ):
-                    if transaction_j not in precedence_graph:
-                        precedence_graph[transaction_j] = []
-                    precedence_graph[transaction_i].append(transaction_j)
-       
-        # Check if the graph is acyclic.
-        if self.has_cycle(precedence_graph):
-            self.check_conflict_s_button.setStyleSheet("background-color: red")
-            self.check_conflict_s_button.setEnabled(False)
-        else:
-            self.check_conflict_s_button.setStyleSheet("background-color: green")
-            self.check_view_s_button.setStyleSheet("background-color: green")
-            self.check_conflict_s_button.setEnabled(False)
-            self.check_view_s_button.setEnabled(False)
+                if (transaction_i != transaction_j and element_i == element_j and (action_i == "write" or action_j =="write")):
+                    #if transaction_j not in precedence_graph:
+                    #precedence_graph[transaction_j] = []
+                    precedence_graph[transaction_i].add(transaction_j)
 
-    # Function for checking if there'are cycle (use DFS search)
-    def has_cycle(self,graph):
-        visited = set()
-        rec_stack = set()
-        def dfs(node):
-            if node not in visited:
-                visited.add(node)
-                rec_stack.add(node)
-                for neighbor in graph.get(node, []):
-                    if neighbor in rec_stack:
+
+
+        # Function for checking if there'are cycle (use DFS search)
+        def has_cycle(node, visited, rec_stack, order):
+            visited[node] = True
+            rec_stack[node] = True
+
+            for neighbor in precedence_graph.get(node, []):
+                if not visited[neighbor]:
+                    if has_cycle(neighbor, visited, rec_stack,order):
                         return True
-                    if neighbor not in visited and dfs(neighbor):
-                        return True
-                rec_stack.remove(node)
+                elif rec_stack[neighbor]:
+                    return True
+
+            rec_stack[node] = False
+            order.append(node)
             return False
-        for node in graph:
-            if node not in visited and dfs(node):
-                return True
-        return False
+
+        # Verifica se il grafo di precedenza ha cicli
+        visited = {transaction: False for transaction in precedence_graph}
+        rec_stack = {transaction: False for transaction in precedence_graph}
+        topological_order = []
+        for transaction, adjacents in precedence_graph.items():
+            print(f"{transaction}: {adjacents}")
+        for transaction in precedence_graph:
+            if not visited[transaction]:
+                if has_cycle(transaction, visited, rec_stack,topological_order):
+                    return False, [] # Lo schedule non è conflict-serializable
+
+        return True,topological_order  # Lo schedule è conflict-serializable
+        
 
     def check_view_serializability(self):
         # Set our scheduler well.
@@ -595,15 +671,22 @@ def init_variable():
     transaction_info = []
     deadlock_f = False
 
+    #Deadlock Solution
+    global scheduler_solution
+    global deadlock_s_exec
+    deadlock_s_exec = False
+    scheduler_solution = []
+
+# Global variable changed by UI interaction
+global flag_deadlock_solution
+flag_deadlock_solution = False
+
 if __name__ == '__main__':
+    # Declare variable for algorithm workflow
+    init_variable()
     # Init GUI
     app = QApplication(sys.argv)
     window = SchedulerWindow()
-    
-    # Declare variable for algorithm workflow
-    init_variable()
-
-
     # Show GUI
     window.show()
     sys.exit(app.exec())
