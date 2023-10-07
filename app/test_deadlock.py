@@ -1,3 +1,4 @@
+import random
 class Transaction:
     def __init__(self, name):
         self.name = name
@@ -16,6 +17,29 @@ class ResourceInfo:
 def setDeadLock():
     global deadlockFlag 
     deadlockFlag = True
+
+
+def handle_solution(trans1,trans2):
+    # For each transaction generate ad assign a priority number.
+    priority_dictionary = {}
+    generated_numbers = set()
+
+    for elem in list_transaction:
+        priority_dictionary[elem] = random.randint(1, 100)
+        while True:
+            random_num = random.randint(1, 100)
+            # we are sure that the generated number is not equal to others
+            if random_num not in generated_numbers:
+                generated_numbers.add(random_num)
+                priority_dictionary[elem] = random_num
+                break  
+
+    print(priority_dictionary)
+
+    if( priority_dictionary[trans1] > priority_dictionary[trans2] ):
+        print("Kill transaction :",trans1)
+    else:
+        print("Kill transaction :",trans2)
 
 def check_deadlock(elem):
     #Invoked whenever an action is added to the deadlock_list transactions in waiting.
@@ -38,6 +62,7 @@ def check_deadlock(elem):
             transactionInDeadLockList_ID = transactionID_in_conflit
             if(any(transactionInDeadLockList_ID in elem for elem in deadlock_detector)):
                 print("DEADLOCK")
+                handle_solution(transactionID_in_conflit,transaction_w)
                 setDeadLock()
             else:
                 print("No, the other transaction is waiting for the commit fo the transaction : ",transactionInDeadLockList_ID)
@@ -255,7 +280,8 @@ schedule = [
     ("T1","write","a"),
     ("T3","write","a"),
 ]
-S = r1(B) w1(A) w2(B) w1(B) r2(A)
+S = r1(B) w1(A) w2(B) w1(B) r2(A) - DEADLOCK
+"""
 schedule = [
     ("T1","read","b"),
     ("T1","write","a"),
@@ -263,6 +289,7 @@ schedule = [
     ("T1","write","b"),
     ("T2","read","a"),
 ]
+"""
 S = r1(A) w2(A) c2 r3(B) w3(A) w1(A) a3 r1(B)
 
 schedule = [
@@ -297,6 +324,7 @@ for elem in list_transaction:
 
 # Apply concurrency control through timestamp
 apply_timestamp()
+
 
 
 # Debug print for checking results:

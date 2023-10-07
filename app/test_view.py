@@ -42,6 +42,7 @@ def is_view_serializable(schedule):
 
     for permuted_transactions in all_permutations:
         permuted_schedule = []
+        
         for t_id in permuted_transactions:
             t_actions = [action for action in schedule if action[0] == t_id]
             permuted_schedule.extend(t_actions)
@@ -56,6 +57,7 @@ def is_view_serializable(schedule):
         final_Write_permuted = set(final_write)
         #print("permuted_final_write",final_Write_permuted)
         if read_from_to_check == read_from_permuted and final_write_to_check == final_Write_permuted:
+            print(permuted_transactions)
             print("FOUNDIT")
             return True
 
@@ -65,7 +67,7 @@ def is_view_serializable(schedule):
 
 # Esempio di uno scheduler
 #r1x,w2x,r3x,r1y,r4z,w2y,r1v,w3v,r4v,w4y,w5y,w5z
-
+"""
 scheduler = [
     ("T1", "read", "x"),
     ("T2", "write", "x"),
@@ -80,7 +82,7 @@ scheduler = [
     ("T5", "write", "y"),
     ("T5","write","z")
 ]
-"""
+
 #w1(y) r2(x) w2(x) r1(x) w2(z) - No view
 scheduler = [
     ("T1", "write", "y"),
@@ -98,6 +100,7 @@ scheduler = [
 ]
 
 #w0(x) r1(x) w1(x) w2(z) w1(z) - View and T2,T0,T1 is the serial schedule
+"""
 scheduler = [
     ("T0","write", "x"),
     ("T1","read", "x"),
@@ -105,7 +108,7 @@ scheduler = [
     ("T2","write","z"),
     ("T1","write","z"),
 ]
-"""
+
 if is_view_serializable(scheduler):
     print("Lo scheduler è view-serializable.")
 else:

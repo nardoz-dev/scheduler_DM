@@ -1,6 +1,7 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QTextEdit, QLabel, QTextBrowser, QLineEdit, QMessageBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QTextEdit, QLabel, QTextBrowser, QLineEdit, QMessageBox, QCheckBox
 from PyQt6.QtGui import QColor
+import itertools
 
 
 class Transaction:
@@ -69,6 +70,14 @@ class SchedulerWindow(QMainWindow):
         self.concurrency_ts_button.clicked.connect(self.apply_timestamp)
         self.concurrency_ts_button.setFixedWidth(250)
         self.concurrency_ts_button.setEnabled(False)
+        self.deadlock_solution_switch = QCheckBox("Deadlock Solution On/Off")
+        #self.concurrency_switch.toggled.connect(self.toggle_concurrency)  - to activate
+        self.deadlock_solution_switch.setChecked(False)
+        # Layout concurrency button functionality
+        concurrency_buttons_layout = QHBoxLayout()
+        concurrency_buttons_layout.addWidget(self.concurrency_ts_button)
+        concurrency_buttons_layout.addWidget(self.deadlock_solution_switch)
+
         # Box for keep track the status of resources
         self.resources_status_label = QLabel("Status Resources/Transaction at the end")
         self.resources_status_text = QTextEdit()
@@ -94,7 +103,7 @@ class SchedulerWindow(QMainWindow):
         concurrency_output_layout.addLayout(actions_layout)
         # Layout for the concurrency section
         concurrency_layout = QVBoxLayout()
-        concurrency_layout.addWidget(self.concurrency_ts_button)
+        concurrency_layout.addLayout(concurrency_buttons_layout)
         concurrency_layout.addLayout(concurrency_output_layout)
 
         # Container for the action
@@ -117,13 +126,29 @@ class SchedulerWindow(QMainWindow):
         serializability_b_layout.addWidget(self.check_conflict_s_button)
         serializability_b_layout.addWidget(self.check_view_s_button)
         # Display the output of serializability
-        self.serial_schedule_label = QLabel("Serial Schedule equivalent")
-        self.serial_schedule_label = QTextEdit()
-        self.serial_schedule_label.setReadOnly(True)
+        self.conflict_label = QLabel("Conflict Equivalent Scheduler")
+        self.conflict_text = QTextEdit()
+        self.conflict_text.setMaximumHeight(40)
+        self.conflict_text.setReadOnly(True)
+        self.view_label = QLabel("View Equivalent Scheduler")
+        self.view_text = QTextEdit()
+        self.view_text.setMaximumHeight(40)
+        self.view_text.setReadOnly(True)
+        # Layout of the output both for conflict and view-serializability
+        conflict_output_layout = QVBoxLayout()
+        conflict_output_layout.addWidget(self.conflict_label)
+        conflict_output_layout.addWidget(self.conflict_text)
+        view_output_layout = QVBoxLayout()
+        view_output_layout.addWidget(self.view_label)
+        view_output_layout.addWidget(self.view_text)
+        serializability_output_layout = QHBoxLayout()
+        serializability_output_layout.addLayout(conflict_output_layout)
+        serializability_output_layout.addLayout(view_output_layout)
         # Layout della serializability section
         serializability_layout = QVBoxLayout()
         serializability_layout.addLayout(serializability_b_layout)
-        serializability_layout.addWidget(self.serial_schedule_label)
+        serializability_layout.addLayout(serializability_output_layout)
+
         # Container per la serializability sectionß
         serializability_container = QWidget()
         serializability_container.setLayout(serializability_layout)
@@ -160,12 +185,13 @@ class SchedulerWindow(QMainWindow):
         self.actions_text.clear()
         self.scheduler_output.clear()
         self.check_conflict_s_button.setStyleSheet("")
+        self.check_view_s_button.setStyleSheet("")
+        self.conflict_text.clear()
+        self.view_text.clear()
         # Clear variables
         init_variable()
 
-    def deadlock_event(self):
-        self.concurrency_ts_button.setEnabled(False)
-        self.check_conflict_s_button.setEnabled(False)
+   
 
     
     #--------------------------------------------- INPUT HANDLER
@@ -219,15 +245,22 @@ class SchedulerWindow(QMainWindow):
         self.generate_scheduler_button.setEnabled(False)
         self.concurrency_ts_button.setEnabled(True)
         self.check_conflict_s_button.setEnabled(True)
+        self.check_view_s_button.setEnabled(True)
         self.display_scheduler()
         #init_variable_for_algorithm()
     
     #---------------------------------------- CONCURRENCY CONTROL
+    
+    def deadlock_event(self):  #FORSE DA ELIMINARE
+        self.concurrency_ts_button.setEnabled(False)
+        
     def setDeadLock(self):
         global deadlock_f
         deadlock_f = True
         self.deadlock_event()
 
+    def deadlock_solution(self,transactionID_1, transactionID_2):
+        pass
     def check_deadlock(self,elem):
         #Invoked whenever an action is added to the deadlock_list transactions in waiting.
         transaction_w, action_w, resource_w = elem[0],elem[1],elem[2]
@@ -245,14 +278,12 @@ class SchedulerWindow(QMainWindow):
                 #print("It's a match, see if also :",transactionID_in_conflit,"is waiting for :",transaction_w)
                 transactionInDeadLockList_ID = transactionID_in_conflit
                 if(any(transactionInDeadLockList_ID in elem for elem in deadlock_detector)):
-                    #print("DEADLOCK")
                     self.setDeadLock()
                     text = "DEADLOCK"
                     self.actions_text.append(text)
                     message_error = ""
                     message_error += f"DeadLock Detected over the transaction {transactionID_in_conflit} and {transaction_w} "
                     self.show_error_popup(message_error)
-                    
                 else:
                     print("No, the other transaction is waiting for the commit fo the transaction : ",transactionInDeadLockList_ID)
 
@@ -438,7 +469,7 @@ class SchedulerWindow(QMainWindow):
     #---------------------------------------- SERIALIZABILITY
     def check_serializability(self):
         # Set our scheduler well.
-        scheduler_for_conflict = [elem for elem in scheduler if "commit" not in elem ]
+        scheduler_for_conflict = [elem for elem in scheduler if "commit" not in elem and "rollback" not in elem ]
         # Init precedent graph
         precedence_graph = {}
         # Scan the scheduler in order to find the conflict pair for adding edges
@@ -455,14 +486,15 @@ class SchedulerWindow(QMainWindow):
                         precedence_graph[transaction_j] = []
                     precedence_graph[transaction_i].append(transaction_j)
        
-        #for transaction, adjacents in precedence_graph.items():
-        #    print(f"{transaction}: {adjacents}")
-
         # Check if the graph is acyclic.
         if self.has_cycle(precedence_graph):
             self.check_conflict_s_button.setStyleSheet("background-color: red")
+            self.check_conflict_s_button.setEnabled(False)
         else:
             self.check_conflict_s_button.setStyleSheet("background-color: green")
+            self.check_view_s_button.setStyleSheet("background-color: green")
+            self.check_conflict_s_button.setEnabled(False)
+            self.check_view_s_button.setEnabled(False)
 
     # Function for checking if there'are cycle (use DFS search)
     def has_cycle(self,graph):
@@ -485,7 +517,66 @@ class SchedulerWindow(QMainWindow):
         return False
 
     def check_view_serializability(self):
-        pass
+        # Set our scheduler well.
+        scheduler_for_conflict = [elem for elem in scheduler if "commit" not in elem and "rollback" not in elem ]
+        # Calculate the set of the current scheduler
+        read_from, final_write = self.extract_read_from_final_write(scheduler_for_conflict)
+        # Create a set without duplicate of all the transaction_id in the scheduler
+        list_transaction = set([tupla[0] for tupla in scheduler_for_conflict])
+        # Generate all permutation possible with the different transaction_id present in the schedule
+        all_permutations = itertools.permutations(list_transaction)
+
+        # iterate over all the permutation, we will stop at the first occurency
+        for permuted_transactions in all_permutations:
+            permuted_schedule = []
+            # Create new scheduler in base of the current permutation of transaction
+            for t_id in permuted_transactions:
+                t_actions = [action for action in scheduler_for_conflict if action[0] == t_id]
+                permuted_schedule.extend(t_actions)
+            
+            #calculate the set of the read from and final write serial scheduler obtained from the combination of permutation
+            permuted_read_from, permuted_final_write = self.extract_read_from_final_write(permuted_schedule)
+
+            read_from_to_check = set(read_from)
+            final_write_to_check = set(final_write)
+            read_from_permuted = set(permuted_read_from)
+            final_Write_permuted = set(final_write)
+            
+            if read_from_to_check == read_from_permuted and final_write_to_check == final_Write_permuted:
+                self.check_view_s_button.setStyleSheet("background-color: green")
+                serial_scheduler = ""
+                serial_scheduler += f"{permuted_transactions}"
+                self.view_text.setText(serial_scheduler)
+                self.check_view_s_button.setEnabled(False)
+                break
+            else:
+                self.check_view_s_button.setStyleSheet("background-color: red")
+                self.view_text.setText("No view-serializable")
+                self.check_view_s_button.setEnabled(False)
+                break
+
+    def extract_read_from_final_write(self,schedule):
+        read_from = []
+        final_write = []
+
+        for i, (transaction_id, action_name, resource) in enumerate(schedule):
+            if action_name == "read":
+                j = i - 1
+                for j in range(i - 1, -1, -1):
+                    #print("Nostra azione : ",(transaction_id, action_name, resource))
+                    #print("Azione dello scheduler :",(schedule[j][0],schedule[j][1],schedule[j][2]))
+                    if (schedule[j][2] == resource and schedule[j][1] == "write" and schedule[j][0] != transaction_id ):
+                        read_from.append((transaction_id,action_name,resource,schedule[j][0],schedule[j][1],schedule[j][2]))
+            if action_name == "write":
+                j = i - 1
+                if(schedule[j][2] == resource):
+                    #create a new list without the tupla with the resource == schedule[j][2]
+                    final_write = [(resource, transaction_id) for resource, _ in final_write if resource != schedule[j][2]]
+                    #add element
+                    final_write.append((resource,schedule[j][0]))
+                else:
+                    final_write.append((resource,transaction_id))
+        return read_from, final_write
 
 
 def init_variable():
