@@ -179,6 +179,7 @@ class SchedulerWindow(QMainWindow):
         self.generate_scheduler_button.setEnabled(True)
         self.concurrency_ts_button.setEnabled(False)
         self.check_conflict_s_button.setEnabled(False)
+        self.check_view_s_button.setEnabled(False)
         # Clear Window GUI
         self.input_scheduler.clear()
         self.resources_status_text.clear()
@@ -307,23 +308,20 @@ class SchedulerWindow(QMainWindow):
         self.resources_status_text.clear()
         self.actions_text.clear()
         self.scheduler_output.clear()
-        # Restore some other variable to default
-
-        deadlock_solution = [tupla for tupla in scheduler if transactionID_1 not in tupla]
-        deadlock_s_exec = True
-        self.display_scheduler(deadlock_solution)
-        self.apply_timestamp(deadlock_solution)
-        """ if( priority_dictionary[transactionID_1] > priority_dictionary[transactionID_2] ):
-            # print("Kill transaction :",trans1)
        
+        if( priority_dictionary[transactionID_1] > priority_dictionary[transactionID_2] ):
+            # print("Kill transaction :",trans1)
+            deadlock_solution = [tupla for tupla in scheduler if transactionID_1 not in tupla]
+            deadlock_s_exec = True
+            self.display_scheduler(deadlock_solution)
+            self.apply_timestamp(deadlock_solution)
         else:
             # print("Kill transaction :",transactionID_2)
             deadlock_solution = [tupla for tupla in scheduler if transactionID_2 not in tupla]
-            # print(deadlock_solution)
             deadlock_s_exec = True
-            self.display_scheduler()
-            self.apply_timestamp()
-        """
+            self.display_scheduler(deadlock_solution)
+            self.apply_timestamp(deadlock_solution)
+        
 
     def check_deadlock(self,elem):
         #Invoked whenever an action is added to the deadlock_list transactions in waiting.
@@ -375,6 +373,10 @@ class SchedulerWindow(QMainWindow):
                             text_to_add = vars(elem)
                             self.resources_status_text.append(str(text_to_add))
                         self.resources_status_text.append("-----------------------------")
+            if not deadlock_f:
+                for elem in transaction_info:
+                    text_to_add = vars(elem)
+                    self.resources_status_text.append(str(text_to_add))
         else:
             # Apply timestamp_rules over the new scheduler
             for elem in scheduler_to_use:
@@ -559,9 +561,6 @@ class SchedulerWindow(QMainWindow):
                     #if transaction_j not in precedence_graph:
                     #precedence_graph[transaction_j] = []
                     precedence_graph[transaction_i].add(transaction_j)
-
-
-
         # Function for checking if there'are cycle (use DFS search)
         def has_cycle(node, visited, rec_stack, order):
             visited[node] = True
