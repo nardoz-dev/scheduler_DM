@@ -241,7 +241,7 @@ class SchedulerWindow(QMainWindow):
         if len(parts) == 2:
             action_type, transaction_id = parts
             if action_type not in ['commit','rollback']:
-                self.show_error_popup("Invalid input format. Please enter 'commit' followed by transaction ID or 'read' or 'write' followed by transaction ID and resource.")
+                self.show_error_popup("Invalid input format. Please enter 'commit' or 'rollback' followed by transaction ID or 'read' or 'write' followed by transaction ID and resource.")
             else: 
                 resource = None
                 transaction_id = "T"+str(transaction_id)
@@ -322,7 +322,6 @@ class SchedulerWindow(QMainWindow):
             self.display_scheduler(deadlock_solution)
             self.apply_timestamp(deadlock_solution)
         
-
     def check_deadlock(self,elem):
         #Invoked whenever an action is added to the deadlock_list transactions in waiting.
         transaction_w, action_w, resource_w = elem[0],elem[1],elem[2]
